@@ -76,11 +76,9 @@
 			children = (
 				18CF19A525D2251100B0C5C6 /* AppDelegate.swift */,
 				18CF19A725D2251100B0C5C6 /* SceneDelegate.swift */,
-				18CF19BB25D226C200B0C5C6 /* TabBarViewController.swift */,
-				18CF19C925D32FCD00B0C5C6 /* CodedView.swift */,
-				18CF19D525D33C9F00B0C5C6 /* CodedTableViewCell.swift */,
-				18CF19E825D3657000B0C5C6 /* CodedViewController.swift */,
 				18CF19DD25D34B6E00B0C5C6 /* ListItem.swift */,
+				18CF19BB25D226C200B0C5C6 /* TabBarViewController.swift */,
+				18CF19EB25D4C1A600B0C5C6 /* Coded View Superclass  */,
 				18CF19CE25D339C600B0C5C6 /* Visual Format Language */,
 				18CF19D125D33AEB00B0C5C6 /* Layout Anchor */,
 				18CF19D325D33B0000B0C5C6 /* Layout Constraint */,
@@ -116,6 +114,16 @@
 				18CF19E525D3648900B0C5C6 /* DetailsViewController.swift */,
 			);
 			path = "Layout Constraint";
+			sourceTree = "<group>";
+		};
+		18CF19EB25D4C1A600B0C5C6 /* Coded View Superclass  */ = {
+			isa = PBXGroup;
+			children = (
+				18CF19C925D32FCD00B0C5C6 /* CodedView.swift */,
+				18CF19D525D33C9F00B0C5C6 /* CodedTableViewCell.swift */,
+				18CF19E825D3657000B0C5C6 /* CodedViewController.swift */,
+			);
+			path = "Coded View Superclass ";
 			sourceTree = "<group>";
 		};
 /* End PBXGroup section */
