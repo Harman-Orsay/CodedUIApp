@@ -1,0 +1,206 @@
+/*
+import UIKit
+
+
+public protocol TappableLinksLabelDelegate: AnyObject {
+    func linkTapped(in label: TappableLinksLabel, with url: URL?)
+}
+
+/// Recieve callback with the URL when the parts with NSAttributedString.Key.link or .attchment attribute are tapped
+
+public class TappableLinksLabel: UILabel {
+    
+    weak var delegate: TappableLinksLabelDelegate? = nil
+    
+    init() {
+        super.init(frame: .zero)
+        self.configure()
+    }
+    
+    required init(coder aDecoder: NSCoder) {
+        super.init(coder: aDecoder)!
+        self.configure()
+    }
+    
+    override init(frame: CGRect) {
+        super.init(frame: frame)
+        self.configure()
+    }
+    
+    func configure() {
+        isUserInteractionEnabled = true
+    }
+    
+    public override func point(inside point: CGPoint, with event: UIEvent?) -> Bool {
+        let superBool = super.point(inside: point, with: event)
+        guard delegate != nil else {return superBool}
+
+        // Configure NSTextContainer
+        let textContainer = NSTextContainer(size: bounds.size)
+        textContainer.lineFragmentPadding = 0.0
+        textContainer.lineBreakMode = lineBreakMode
+        textContainer.maximumNumberOfLines = numberOfLines
+        
+        // Configure NSLayoutManager and add the text container
+        let layoutManager = NSLayoutManager()
+        layoutManager.addTextContainer(textContainer)
+        
+        guard let attributedText = attributedText else {return false}
+        
+        // Configure NSTextStorage and apply the layout manager
+        let textStorage = NSTextStorage(attributedString: attributedText)
+        textStorage.addAttribute(NSAttributedString.Key.font, value: font!, range: NSMakeRange(0, attributedText.length))
+        textStorage.addLayoutManager(layoutManager)
+        
+        // get the tapped character location
+        let locationOfTouchInLabel = point
+        
+        // account for text alignment and insets
+        let textBoundingBox = layoutManager.usedRect(for: textContainer)
+        var alignmentOffset: CGFloat!
+        switch textAlignment {
+        case .left, .natural, .justified:
+            alignmentOffset = 0.0
+        case .center:
+            alignmentOffset = 0.5
+        case .right:
+            alignmentOffset = 1.0
+        @unknown default:
+            fatalError()
+        }
+        
+        let xOffset = ((bounds.size.width - textBoundingBox.size.width) * alignmentOffset) - textBoundingBox.origin.x
+        let yOffset = ((bounds.size.height - textBoundingBox.size.height) * alignmentOffset) - textBoundingBox.origin.y
+        let locationOfTouchInTextContainer = CGPoint(x: locationOfTouchInLabel.x - xOffset, y: locationOfTouchInLabel.y - yOffset)
+        
+        // work out which character was tapped
+        let characterIndex = layoutManager.characterIndex(for: locationOfTouchInTextContainer, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+        
+        // work out how many characters are in the string up to and including the line tapped, to ensure we are not off the end of the character string
+        let lineTapped = Int(ceil(locationOfTouchInLabel.y / font.lineHeight)) - 1
+        let rightMostPointInLineTapped = CGPoint(x: bounds.size.width, y: font.lineHeight * CGFloat(lineTapped))
+        let charsInLineTapped = layoutManager.characterIndex(for: rightMostPointInLineTapped, in: textContainer, fractionOfDistanceBetweenInsertionPoints: nil)
+        let errorMargin = 10
+        guard characterIndex < charsInLineTapped + errorMargin else {return false}
+        
+        let link = NSAttributedString.Key.link
+        let attachment = NSAttributedString.Key.attachment
+        let attributeValue = self.attributedText?.attribute(link, at: characterIndex, effectiveRange: nil) ?? self.attributedText?.attribute(attachment, at: characterIndex, effectiveRange: nil)
+        
+        if let value = attributeValue {
+            delegate?.linkTapped(in: self, with: value as? URL)
+        }
+        
+        return superBool
+    }
+}
+
+lazy var textLabel: TappableLinksLabel = {
+    let label = TappableLinksLabel()
+    label.textAlignment = .center
+    label.numberOfLines = 0
+    label.translatesAutoresizingMaskIntoConstraints = false
+    label.attributedText = RTF.centerText("", font: ) + RTF.centerText("", font: ) + link("",
+                                                                                                                                                                                                                                                           url: URL(string: "")!,
+                                                                                                                                                                                                                                                           font: )
+    return label
+}()
+
+public struct RTF {
+    
+    static let defaultParagraphStyle = { () -> NSMutableParagraphStyle in
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .left
+        paragraphStyle.lineSpacing = 1.5
+        return paragraphStyle
+    }
+            
+    static let centerParagraphStyle = { () -> NSMutableParagraphStyle in
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .center
+        paragraphStyle.lineSpacing = 1.5
+        return paragraphStyle
+    }
+    
+    static let rightParagraphStyle = { () -> NSMutableParagraphStyle in
+        let paragraphStyle = NSMutableParagraphStyle()
+        paragraphStyle.alignment = .right
+        paragraphStyle.lineSpacing = 1.5
+        return paragraphStyle
+    }
+    
+    static func centerText(_ text: String, font: UIFont, color: UIColor) -> NSAttributedString {
+        let textAttributes: [NSAttributedString.Key : NSObject] = [
+            NSAttributedString.Key.paragraphStyle: centerParagraphStyle(),
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: color
+        ]
+        return NSAttributedString(string: text, attributes: textAttributes)
+    }
+    
+    static func text(_ text: String, font: UIFont, color: UIColor) -> NSAttributedString {
+        let textAttributes: [NSAttributedString.Key : NSObject] = [
+            NSAttributedString.Key.paragraphStyle: defaultParagraphStyle(),
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: color
+        ]
+        return NSAttributedString(string: text, attributes: textAttributes)
+    }
+    
+    static func rightText(_ text: String, font: UIFont, color: UIColor) -> NSAttributedString {
+        let textAttributes: [NSAttributedString.Key : NSObject] = [
+            NSAttributedString.Key.paragraphStyle: rightParagraphStyle(),
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: color
+        ]
+        return NSAttributedString(string: text, attributes: textAttributes)
+    }
+    
+    static func underlined(_ text: String, font: UIFont, color: UIColor) -> NSAttributedString {
+        let textAttributes: [NSAttributedString.Key : NSObject] = [
+            NSAttributedString.Key.paragraphStyle: defaultParagraphStyle(),
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: color,
+            NSAttributedString.Key.underlineStyle: NSNumber(value: NSUnderlineStyle.single.rawValue)
+        ]
+        return NSAttributedString(string: text, attributes: textAttributes)
+    }
+    
+    static func inlineImage(_ image: UIImage?, withBounds bounds: CGRect) -> NSAttributedString {
+        let attachment = NSTextAttachment()
+        attachment.image = image
+        attachment.bounds = bounds
+        return NSAttributedString(attachment: attachment)
+    }
+    
+    static func link(_ text: String, url: URL, font: UIFont, color: UIColor) -> NSAttributedString {
+        let textAttributes: [NSAttributedString.Key : Any] = [
+            NSAttributedString.Key.paragraphStyle: defaultParagraphStyle(),
+            NSAttributedString.Key.font: font,
+            NSAttributedString.Key.foregroundColor: color,
+            NSAttributedString.Key.underlineColor: color,
+            NSAttributedString.Key.underlineStyle: NSNumber(value: NSUnderlineStyle.single.rawValue),
+            NSAttributedString.Key.attachment: url
+        ]
+        return NSAttributedString(string: text, attributes: textAttributes)
+    }
+    
+    static func highlight(currentText: NSAttributedString, toHighlight texts: [String], highlightFont: UIFont) -> NSAttributedString {
+        let fulltext = currentText.string
+        var ranges = [Range<String.Index>]()
+        for text in texts {
+            ranges.append(contentsOf: fulltext.ranges(of: text))
+        }
+        
+        let highlightedText = NSMutableAttributedString(attributedString: currentText)
+        for range in ranges {
+            let nsrange = fulltext.nsRange(from: range)
+            highlightedText.addAttribute(NSAttributedString.Key.font,
+                                        value: highlightFont,
+                                        range: nsrange)
+        }
+        return highlightedText
+    }
+}
+}
+*/
